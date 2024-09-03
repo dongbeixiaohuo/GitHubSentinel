@@ -6,9 +6,26 @@ import os  # 导入os模块用于文件和目录操作
 from logger import LOG  # 导入日志模块
 
 class GitHubClient:
-    def __init__(self, token):
+    def __init__(self, token=None):
+        if token is None:
+            token = os.getenv('GITHUB_TOKEN')  # 从环境变量中获取GitHub token
+        if not token:
+            LOG.error("GitHub token is missing. Please set the GITHUB_TOKEN environment variable.")
+            raise ValueError("GitHub token is required but not provided.")
+        
         self.token = token  # GitHub API令牌
         self.headers = {'Authorization': f'token {self.token}'}  # 设置HTTP头部认证信息
+
+        # 验证token是否有效
+        self._validate_token()
+
+    def _validate_token(self):
+        """验证GitHub token是否有效"""
+        response = requests.get('https://api.github.com/user', headers=self.headers)
+        if response.status_code == 401:
+            LOG.error("Invalid GitHub token. Please check your token and try again.")
+            raise ValueError("Invalid GitHub token.")
+        LOG.info("GitHub token is valid.")
 
     def fetch_updates(self, repo, since=None, until=None):
         # 获取指定仓库的更新，可以指定开始和结束日期
@@ -27,6 +44,8 @@ class GitHubClient:
         if until:
             params['until'] = until  # 如果指定了结束日期，添加到参数中
 
+        LOG.debug(f"Fetching commits from {url} with params {params} and headers {self.headers}")
+        
         response = requests.get(url, headers=self.headers, params=params)
         response.raise_for_status()  # 检查请求是否成功
         return response.json()  # 返回JSON格式的数据
@@ -34,7 +53,7 @@ class GitHubClient:
     def fetch_issues(self, repo, since=None, until=None):
         url = f'https://api.github.com/repos/{repo}/issues'  # 构建获取问题的API URL
         params = {
-            'state': 'closed',  # 仅获取已关闭的问题
+            'state': 'closed',  # 仅获已关闭的问题
             'since': since,
             'until': until
         }
