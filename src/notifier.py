@@ -14,21 +14,34 @@ class Notifier:
         else:
             LOG.warning("邮件设置未配置正确，无法发送通知")
     
-    def send_email(self, repo, report):
+    def send_email(self, subject, body):
         LOG.info("准备发送邮件")
         msg = MIMEMultipart()
         msg['From'] = self.email_settings['from']
         msg['To'] = self.email_settings['to']
-        msg['Subject'] = f"[GitHubSentinel]{repo} 进展简报"
+        msg['Subject'] = subject
         
-        # 将Markdown内容转换为HTML
-        html_report = markdown2.markdown(report)
+        # 确保 body 是字符串
+        if not isinstance(body, str):
+            LOG.error("邮件正文不是字符串类型")
+            return
 
-        msg.attach(MIMEText(html_report, 'html'))
+        # 将 Markdown 内容转换为 HTML
+        html_body = markdown2.markdown(body)
+
+        # 确保 html_body 是字符串
+        if not isinstance(html_body, str):
+            LOG.error("转换后的 HTML 内容不是字符串类型")
+            return
+
+        # 添加邮件正文
+        msg.attach(MIMEText(html_body, 'html'))  # 使用 'html' 发送 HTML 格式的邮件
+
         try:
             with smtplib.SMTP_SSL(self.email_settings['smtp_server'], self.email_settings['smtp_port']) as server:
                 LOG.debug("登录SMTP服务器")
                 server.login(msg['From'], self.email_settings['password'])
+                LOG.debug("SMTP登录成功")
                 server.sendmail(msg['From'], msg['To'], msg.as_string())
                 LOG.info("邮件发送成功！")
         except Exception as e:
