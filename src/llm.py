@@ -14,7 +14,7 @@ class LLM:
         if self.model == "openai":
             from openai import OpenAI  # 导入OpenAI库用于访问GPT模型
             self.client = OpenAI()  # 创建OpenAI客户端实例
-        elif self.model == "ollama":
+        elif self.model == "mistral":
             self.api_url = config.ollama_api_url  # 设置Ollama API的URL
         else:
             raise ValueError(f"Unsupported model type: {self.model}")  # 如果模型类型不支持，抛出错误
@@ -48,7 +48,7 @@ class LLM:
         # 根据选择的模型调用相应的生成报告方法
         if self.model == "openai":
             return self._generate_report_openai(messages)
-        elif self.model == "ollama":
+        elif self.model == "mistral":
             return self._generate_report_ollama(messages)
         else:
             raise ValueError(f"Unsupported model type: {self.model}")
