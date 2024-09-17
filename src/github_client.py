@@ -4,6 +4,7 @@ import requests  # 导入requests库用于HTTP请求
 from datetime import datetime, date, timedelta  # 导入日期处理模块
 import os  # 导入os模块用于文件和目录操作
 from logger import LOG  # 导入日志模块
+import time
 
 class GitHubClient:
     def __init__(self, token):
@@ -13,11 +14,23 @@ class GitHubClient:
     def fetch_updates(self, repo, since=None, until=None):
         # 获取指定仓库的更新，可以指定开始和结束日期
         updates = {
-            'commits': self.fetch_commits(repo, since, until),  # 获取提交记录
-            'issues': self.fetch_issues(repo, since, until),  # 获取问题
-            'pull_requests': self.fetch_pull_requests(repo, since, until)  # 获取拉取请求
+            'commits': self.fetch_with_retry(self.fetch_commits, repo, since, until),  # 获取提交记录
+            'issues': self.fetch_with_retry(self.fetch_issues, repo, since, until),  # 获取问题
+            'pull_requests': self.fetch_with_retry(self.fetch_pull_requests, repo, since, until)  # 获取拉取请求
         }
         return updates
+
+    def fetch_with_retry(self, fetch_func, *args, max_retries=3, delay=5):
+        for attempt in range(max_retries):
+            try:
+                return fetch_func(*args)
+            except requests.exceptions.RequestException as e:
+                LOG.error(f"尝试 {attempt + 1}/{max_retries} 失败: {str(e)}")
+                if attempt + 1 < max_retries:
+                    time.sleep(delay)
+                else:
+                    LOG.error(f"达到最大重试次数，返回空列表")
+                    return []
 
     def fetch_commits(self, repo, since=None, until=None):
         LOG.debug(f"准备获取 {repo} 的 Commits")
@@ -53,15 +66,21 @@ class GitHubClient:
     def fetch_pull_requests(self, repo, since=None, until=None):
         LOG.debug(f"准备获取 {repo} 的 Pull Requests。")
         url = f'https://api.github.com/repos/{repo}/pulls'  # 构建获取拉取请求的API URL
-        params = {'state': 'closed', 'since': since, 'until': until}
+        params = {'state': 'all', 'sort': 'updated', 'direction': 'desc'}
+        if since:
+            params['since'] = since
         try:
             response = requests.get(url, headers=self.headers, params=params, timeout=10)
             response.raise_for_status()  # 确保成功响应
-            return response.json()
+            pulls = response.json()
+            if until:
+                until_date = datetime.fromisoformat(until.rstrip('Z'))
+                pulls = [pr for pr in pulls if datetime.fromisoformat(pr['updated_at'].rstrip('Z')) <= until_date]
+            return pulls
         except Exception as e:
             LOG.error(f"从 {repo} 获取 Pull Requests 失败：{str(e)}")
             LOG.error(f"响应详情：{response.text if 'response' in locals() else '无响应数据可用'}")
-            return []
+            raise
 
     def export_daily_progress(self, repo):
         LOG.debug(f"[准备导出项目进度]：{repo}")

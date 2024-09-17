@@ -1,0 +1,25 @@
+{
+    "github_token": "",
+    "email": {
+        "smtp_server": "smtp.qiye.aliyun.com",
+        "smtp_port": 465,
+        "from": "info@javis3000.com",
+        "password": "",
+        "receivers": {
+            "cybersecurity": ["tom.xia@linemore.com"],
+            "github": ["dante.sun@linemore.com"],
+            "all": ["dante.sun@linemore.com"]
+        }
+    },
+    "subscriptions_file": "/home/lmroot/AI/lesson0828/GitHubSentinel/src/subscriptions.json",
+    "github_progress_frequency_days": 1,
+    "github_progress_execution_time":"08:00",
+    "llm": {
+        "openai_models": ["gpt-4o", "gpt-4o-mini"],
+        "ollama_models": ["mistral", "llama3.1"],
+        "ollama_api_url": "http://localhost:11435/api/chat"
+    },
+    "report_types": ["github", "cybersecurity"],
+    "default_model_type": "openai",
+    "default_model_name": "gpt-4o"
+}

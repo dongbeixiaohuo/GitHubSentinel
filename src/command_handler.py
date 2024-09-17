@@ -3,11 +3,12 @@
 import argparse  # 导入argparse库，用于处理命令行参数解析
 
 class CommandHandler:
-    def __init__(self, github_client, subscription_manager, report_generator):
+    def __init__(self, github_client, subscription_manager, report_generator, config):
         # 初始化CommandHandler，接收GitHub客户端、订阅管理器和报告生成器
         self.github_client = github_client
         self.subscription_manager = subscription_manager
         self.report_generator = report_generator
+        self.config = config  # 添加这行
         self.parser = self.create_parser()  # 创建命令行解析器
 
     def create_parser(self):
@@ -52,6 +53,20 @@ class CommandHandler:
         parser_help = subparsers.add_parser('help', help='Show help message')
         parser_help.set_defaults(func=self.print_help)
 
+        # 添加 cybersecurity 邮箱订阅命令
+        parser_cyber_subscribe = subparsers.add_parser('cyber-subscribe', help='Subscribe an email to cybersecurity reports')
+        parser_cyber_subscribe.add_argument('email', type=str, help='Email address to subscribe')
+        parser_cyber_subscribe.set_defaults(func=self.cyber_subscribe)
+
+        # 添加 cybersecurity 邮箱取消订阅命令
+        parser_cyber_unsubscribe = subparsers.add_parser('cyber-unsubscribe', help='Unsubscribe an email from cybersecurity reports')
+        parser_cyber_unsubscribe.add_argument('email', type=str, help='Email address to unsubscribe')
+        parser_cyber_unsubscribe.set_defaults(func=self.cyber_unsubscribe)
+
+        # 添加列出 cybersecurity 订阅邮箱命令
+        parser_cyber_list = subparsers.add_parser('cyber-list', help='List all subscribed emails for cybersecurity reports')
+        parser_cyber_list.set_defaults(func=self.cyber_list)
+
         return parser  # 返回配置好的解析器
 
     # 下面是各种命令对应的方法实现，每个方法都使用了相应的管理器来执行实际操作，并输出结果信息
@@ -83,3 +98,24 @@ class CommandHandler:
 
     def print_help(self, args=None):
         self.parser.print_help()  # 输出帮助信息
+
+    def cyber_subscribe(self, args):
+        if self.config.add_cybersecurity_subscriber(args.email):
+            print(f"Successfully subscribed {args.email} to cybersecurity reports.")
+        else:
+            print(f"Failed to subscribe {args.email}. It may already be subscribed.")
+
+    def cyber_unsubscribe(self, args):
+        if self.config.remove_cybersecurity_subscriber(args.email):
+            print(f"Successfully unsubscribed {args.email} from cybersecurity reports.")
+        else:
+            print(f"Failed to unsubscribe {args.email}. It may not be in the subscription list.")
+
+    def cyber_list(self, args):
+        subscribers = self.config.get_cybersecurity_subscribers()
+        if subscribers:
+            print("Cybersecurity report subscribers:")
+            for email in subscribers:
+                print(f"  - {email}")
+        else:
+            print("No subscribers for cybersecurity reports.")

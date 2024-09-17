@@ -11,10 +11,10 @@ from logger import LOG  # 从logger模块导入LOG对象，用于日志记录
 def main():
     config = Config()  # 创建配置实例
     github_client = GitHubClient(config.github_token)  # 创建GitHub客户端实例
-    llm = LLM(config)  # 创建语言模型实例
-    report_generator = ReportGenerator(llm, config.report_types)  # 创建报告生成器实例
+    llm = LLM(config, config.default_model_type, config.default_model_name)  # 创建语言模型实例
+    report_generator = ReportGenerator(llm, config.report_types, github_client)  # 创建报告生成器实例
     subscription_manager = SubscriptionManager(config.subscriptions_file)  # 创建订阅管理器实例
-    command_handler = CommandHandler(github_client, subscription_manager, report_generator)  # 创建命令处理器实例
+    command_handler = CommandHandler(github_client, subscription_manager, report_generator, config)  # 添加 config 参数
     
     parser = command_handler.parser  # 获取命令解析器
     command_handler.print_help()  # 打印帮助信息

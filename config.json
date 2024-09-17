@@ -1,29 +1,42 @@
 {
-    "github": {
-        "token": "your_github_token",
-        "subscriptions_file": "subscriptions.json",
-        "progress_frequency_days": 1,
-        "progress_execution_time": "08:00"
-    },
-    "email":  {
-        "smtp_server": "smtp.exmail.qq.com",
+    "github_token": "",
+    "subscriptions_file": "subscriptions.json",
+    "freq_days": 2,
+    "exec_time": "09:00",
+    "email": {
+        "smtp_server": "smtp.qiye.aliyun.com",
         "smtp_port": 465,
-        "from": "pjt@zaijidata.com",
-        "password": "",
-        "to": "test@zaijidata.com"
-    },
-    "llm": {
-        "model_type": "ollama",
-        "openai_model_name": "gpt-4o-mini",
-        "ollama_model_name": "llama3.1",
-        "ollama_api_url": "http://localhost:11434/api/chat"
+        "from": "info@javis3000.com",
+        "password": "Linemore@2030!",
+        "to": "dante.sun@linemore.com",
+        "receivers": {
+            "cybersecurity": [
+                "tom.xia@linemore.com"
+            ],
+            "github": [
+                "dante.sun@linemore.com"
+            ],
+            "all": [
+                "dante.sun@linemore.com"
+            ],
+            "cybersecurity_subscribers": [
+                "dante.sun@aliyun.com"
+            ]
+        }
     },
     "report_types": [
         "github",
-        "hacker_news_hours_topic",
-        "hacker_news_daily_report"
+        "cybersecurity"
     ],
-    "slack": {
-        "webhook_url": "your_slack_webhook_url"
-    }
+    "openai_models": [
+        "gpt-4o",
+        "gpt-4o-mini"
+    ],
+    "ollama_models": [
+        "llama2",
+        "mistral"
+    ],
+    "ollama_api_url": "http://localhost:11434/api/generate",
+    "default_model_type": "openai",
+    "default_model_name": "gpt-4o"
 }

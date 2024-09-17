@@ -1,24 +1,26 @@
 import json
+import os
 import requests
 from openai import OpenAI  # 导入OpenAI库用于访问GPT模型
 from logger import LOG  # 导入日志模块
 
 class LLM:
-    def __init__(self, config):
-        """
-        初始化 LLM 类，根据配置选择使用的模型（OpenAI 或 Ollama）。
-
-        :param config: 配置对象，包含所有的模型配置参数。
-        """
+    def __init__(self, config, model_type, model_name):
         self.config = config
-        self.model = config.llm_model_type.lower()  # 获取模型类型并转换为小写
-        if self.model == "openai":
-            self.client = OpenAI()  # 创建OpenAI客户端实例
-        elif self.model == "ollama":
-            self.api_url = config.ollama_api_url  # 设置Ollama API的URL
+        self.model_type = model_type.lower()
+        self.model_name = model_name
+
+        if self.model_type == "openai":
+            api_key = os.getenv("OPENAI_API_KEY")
+            if not api_key:
+                raise ValueError("OpenAI API key is not set. Please set the OPENAI_API_KEY environment variable.")
+            api_base_url = "https://api.javis3000.com/v1/"
+            self.client = OpenAI(api_key=api_key, base_url=api_base_url)
+        elif self.model_type == "ollama":
+            self.api_url = config.ollama_api_url
         else:
-            LOG.error(f"不支持的模型类型: {self.model}")
-            raise ValueError(f"不支持的模型类型: {self.model}")  # 如果模型类型不支持，抛出错误
+            LOG.error(f"不支持的模型类型: {self.model_type}")
+            raise ValueError(f"不支持的模型类型: {self.model_type}")
 
     def generate_report(self, system_prompt, user_content):
         """
@@ -34,27 +36,27 @@ class LLM:
         ]
 
         # 根据选择的模型调用相应的生成报告方法
-        if self.model == "openai":
+        if self.model_type == "openai":
             return self._generate_report_openai(messages)
-        elif self.model == "ollama":
+        elif self.model_type == "ollama":
             return self._generate_report_ollama(messages)
         else:
-            raise ValueError(f"不支持的模型类型: {self.model}")
+            raise ValueError(f"不支持的模型类型: {self.model_type}")
 
     def _generate_report_openai(self, messages):
         """
         使用 OpenAI GPT 模型生成报告。
 
-        :param messages: 包含系统提示和用户内容的消息列表。
+        :param messages: 包含系统提示和用户内容的消息��表。
         :return: 生成的报告内容。
         """
-        LOG.info(f"使用 OpenAI {self.config.openai_model_name} 模型生成报告。")
+        LOG.info(f"使用 OpenAI {self.model_name} 模型生成报告。")
         try:
             response = self.client.chat.completions.create(
-                model=self.config.openai_model_name,  # 使用配置中的OpenAI模型名称
-                messages=messages
+                model=self.model_name,
+                messages=[{"role": m["role"], "content": m["content"]} for m in messages]
             )
-            LOG.debug("GPT 响应: {}", response)
+            LOG.debug(f"GPT 响应: {response}")
             return response.choices[0].message.content  # 返回生成的报告内容
         except Exception as e:
             LOG.error(f"生成报告时发生错误：{e}")
@@ -67,10 +69,10 @@ class LLM:
         :param messages: 包含系统提示和用户内容的消息列表。
         :return: 生成的报告内容。
         """
-        LOG.info(f"使用 Ollama {self.config.ollama_model_name} 模型生成报告。")
+        LOG.info(f"使用 Ollama {self.model_name} 模型生成报告。")
         try:
             payload = {
-                "model": self.config.ollama_model_name,  # 使用配置中的Ollama模型名称
+                "model": self.model_name,  # 使用配置中的Ollama模型名称
                 "messages": messages,
                 "max_tokens": 4000,
                 "temperature": 0.7,
@@ -88,14 +90,14 @@ class LLM:
             if message_content:
                 return message_content  # 返回生成的报告内容
             else:
-                LOG.error("无法从响应中提取报告内容。")
+                LOG.error("无��从响应中提取报告内容。")
                 raise ValueError("Ollama API 返回的响应结构无效")
         except Exception as e:
             LOG.error(f"生成报告时发生错误：{e}")
             raise
 
 if __name__ == '__main__':
-    from config import Config  # 导入配置管理类
+    from config import Config  # 导配置管理类
     config = Config()
     llm = LLM(config)
 

@@ -1,56 +1,73 @@
 import smtplib
 import markdown2
+import json
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.header import Header
 from logger import LOG
 
 class Notifier:
     def __init__(self, email_settings):
         self.email_settings = email_settings
+        LOG.debug(f"Notifier 初始化，邮件设置: {json.dumps(email_settings, indent=2)}")
     
     def notify_github_report(self, repo, report):
-        """
-        发送 GitHub 项目报告邮件
-        :param repo: 仓库名称
-        :param report: 报告内容
-        """
+        LOG.debug(f"开始处理 GitHub 报告通知，仓库: {repo}")
         if self.email_settings:
             subject = f"[GitHub] {repo} 进展简报"
-            self.send_email(subject, report)
+            github_receivers = self.email_settings['receivers'].get('github', [])
+            all_receivers = self.email_settings['receivers'].get('all', [])
+            receivers = list(set(github_receivers + all_receivers))  # 去重
+            LOG.debug(f"GitHub 收件人: {github_receivers}")
+            LOG.debug(f"所有收件人: {all_receivers}")
+            LOG.debug(f"最终收件人列表: {receivers}")
+            
+            if not receivers:
+                LOG.error("GitHub 报告没有配置收件人")
+                return
+            self.send_email(subject, report, receivers)
         else:
             LOG.warning("邮件设置未配置正确，无法发送 GitHub 报告通知")
+
+    # ... 其他方法 ...
     
-    def notify_hn_report(self, date, report):
-        """
-        发送 Hacker News 每日技术趋势报告邮件
-        :param date: 报告日期
-        :param report: 报告内容
-        """
+    def notify_cybersecurity_report(self, date, report):
         if self.email_settings:
-            subject = f"[HackerNews] {date} 技术趋势"
-            self.send_email(subject, report)
+            subject = f"[网络安全] {date} 技术趋势"
+            receivers = self.email_settings['receivers']['cybersecurity'] + self.email_settings['receivers']['all']
+            self.send_email(subject, report, receivers)
         else:
-            LOG.warning("邮件设置未配置正确，无法发送 Hacker News 报告通知")
+            LOG.warning("邮件设置未配置正确，无法发送网络安全报告通知")
     
-    def send_email(self, subject, report):
+    def send_email(self, subject, report, receivers):
+        if not receivers:
+            LOG.error("没有指定收件人，无法发送邮件")
+            return
+        
         LOG.info(f"准备发送邮件:{subject}")
+        LOG.debug(f"SMTP服务器: {self.email_settings['smtp_server']}")
+        LOG.debug(f"SMTP端口: {self.email_settings['smtp_port']}")
+        LOG.debug(f"发件人: {self.email_settings['from']}")
+        LOG.debug(f"收件人: {', '.join(receivers)}")
+        
         msg = MIMEMultipart()
         msg['From'] = self.email_settings['from']
-        msg['To'] = self.email_settings['to']
+        msg['To'] = ', '.join(receivers)
         msg['Subject'] = subject
         
-        # 将Markdown内容转换为HTML
         html_report = markdown2.markdown(report)
-
         msg.attach(MIMEText(html_report, 'html'))
+
         try:
             with smtplib.SMTP_SSL(self.email_settings['smtp_server'], self.email_settings['smtp_port']) as server:
                 LOG.debug("登录SMTP服务器")
-                server.login(msg['From'], self.email_settings['password'])
-                server.sendmail(msg['From'], msg['To'], msg.as_string())
-                LOG.info("邮件发送成功！")
+                server.login(self.email_settings['from'], self.email_settings['password'])
+                server.send_message(msg)
+                LOG.info(f"邮件发送成功！接收者: {', '.join(receivers)}")
+        except smtplib.SMTPRecipientsRefused as e:
+            LOG.error(f"邮件发送失败，收件人被拒绝: {e}")
         except Exception as e:
-            LOG.error(f"发送邮件失败：{str(e)}")
+            LOG.error(f"发送邮件时发生错误: {e}", exc_info=True)  # 添加 exc_info=True 以获取完整的错误堆栈
 
 if __name__ == '__main__':
     from config import Config
