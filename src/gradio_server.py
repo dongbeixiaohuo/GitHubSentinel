@@ -7,6 +7,7 @@ from llm import LLM  # 导入可能用于处理语言模型的LLM类
 from subscription_manager import SubscriptionManager  # 导入订阅管理器
 from logger import LOG  # 导入日志记录器
 from hacknews import fetch_hackernews_top_stories, save_stories_to_markdown
+from cyber_security import CybersecurityClient  # 导入网络安全模块
 
 # 创建各个组件的实例
 config = Config()
@@ -14,34 +15,47 @@ github_client = GitHubClient(config.github_token)
 llm = LLM()
 report_generator = ReportGenerator(llm)
 subscription_manager = SubscriptionManager(config.subscriptions_file)
+cybersecurity_client = CybersecurityClient()
 
-def export_progress_by_date_range(repo, days):
-    # 定义一个函数，用于导出和生成指定时间范围内项目的进展报告
-    raw_file_path = github_client.export_progress_by_date_range(repo, days)  # 导出原始数据文件路径
-    report, report_file_path = report_generator.generate_report_by_date_range(raw_file_path, days)  # 生成并获取报告内容及文件路径
-
-    return report, report_file_path  # 返回报告内容和报告文件路径
-
-def generate_hackernews_report():
+def generate_report(fetch_func, save_dir, generate_func, log_prefix):
     try:
-        LOG.info("[开始执行Hacker News定时任务]")
-        top_stories = fetch_hackernews_top_stories()
-        LOG.info(f"成功爬取 {len(top_stories)} 条新闻")
+        LOG.info(f"[{log_prefix}] 开始抓取新闻")
+        top_stories = fetch_func()
+        LOG.info(f"[{log_prefix}] 成功爬取 {len(top_stories)} 条新闻")
         
-        save_directory = "hackernews_reports"
-        markdown_file_path = save_stories_to_markdown(top_stories, save_directory)
-        LOG.info(f"新闻已保存到: {markdown_file_path}")
+        markdown_file_path = save_stories_to_markdown(top_stories, save_dir)
+        LOG.info(f"[{log_prefix}] 新闻已保存到: {markdown_file_path}")
         
         with open(markdown_file_path, 'r', encoding='utf-8') as file:
             markdown_content = file.read()
         
-        processed_report = report_generator.generate_hackernews_report(markdown_content)
-        LOG.info("Hacker News 日报生成成功")
+        processed_report = generate_func(markdown_content)
+        LOG.info(f"[{log_prefix}] 日报生成成功")
         
         return processed_report, markdown_file_path
     except Exception as e:
-        LOG.error(f"Hacker News 任务执行失败: {e}")
-        return str(e), None
+        LOG.error(f"[{log_prefix}] 任务执行失败: {e}")
+        return f"{log_prefix} 任务执行失败: {e}", None
+
+def export_progress_by_date_range(repo, days):
+    try:
+        if not repo or not isinstance(days, int) or days <= 0:
+            raise ValueError("无效的输入参数")
+        
+        LOG.info(f"开始导出项目 {repo} 的 {days} 天进展报告")
+        raw_file_path = github_client.export_progress_by_date_range(repo, days)
+        report, report_file_path = report_generator.generate_report_by_date_range(raw_file_path, days)
+        LOG.info(f"项目 {repo} 的 {days} 天进展报告生成成功")
+        return report, report_file_path
+    except Exception as e:
+        LOG.error(f"导出项目进展报告失败: {e}")
+        return f"导出项目进展报告失败: {e}", None
+
+def generate_hackernews_report():
+    return generate_report(fetch_hackernews_top_stories, "hackernews_reports", report_generator.generate_hackernews_report, "Hacker News")
+
+def generate_cybersecurity_report():
+    return generate_report(cybersecurity_client.fetch_top_stories, "cybersecurity_reports", report_generator.generate_hackernews_report, "Cybersecurity")
 
 # 创建Gradio界面
 with gr.Blocks(title="GitHubSentinel") as demo:
@@ -65,7 +79,15 @@ with gr.Blocks(title="GitHubSentinel") as demo:
         
         hackernews_submit.click(generate_hackernews_report, inputs=[], outputs=[hackernews_output, hackernews_file])
 
+    with gr.Tab("Cybersecurity报告"):
+        gr.Markdown("## 生成Cybersecurity报告")
+        cybersecurity_submit = gr.Button("生成Cybersecurity报告")
+        cybersecurity_output = gr.Markdown()
+        cybersecurity_file = gr.File(label="下载原始Markdown文件")
+        
+        cybersecurity_submit.click(generate_cybersecurity_report, inputs=[], outputs=[cybersecurity_output, cybersecurity_file])
+
 if __name__ == "__main__":
-    demo.launch(share=True, server_name="0.0.0.0")  # 启动界面并设置为公共可访问
+    demo.launch(share=True, server_name="0.0.0.0")
     # 可选带有用户认证的启动方式
     # demo.launch(share=True, server_name="0.0.0.0", auth=("django", "1234"))
