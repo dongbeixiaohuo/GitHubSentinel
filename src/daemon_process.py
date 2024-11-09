@@ -1,16 +1,14 @@
-import daemon
 import threading
+import daemon
 import time
-
-
-from config import Config
-from github_client import GitHubClient
-from notifier import Notifier
-from report_generator import ReportGenerator
-from llm import LLM
-from subscription_manager import SubscriptionManager
-from scheduler import Scheduler
-from logger import LOG
+from loguru import logger
+from src.config import Config
+from src.github_client import GitHubClient
+from src.notifier import Notifier
+from src.llm import LLM
+from src.report_generator import ReportGenerator
+from src.subscription_manager import SubscriptionManager
+from src.scheduler import Scheduler
 
 def run_scheduler(scheduler):
     scheduler.start()
@@ -35,7 +33,7 @@ def main():
     scheduler_thread.daemon = True
     scheduler_thread.start()
     
-    LOG.info("Scheduler thread started.")
+    logger.info("Scheduler thread started.")
     
     # Use python-daemon to properly daemonize the process
     with daemon.DaemonContext():
@@ -43,7 +41,7 @@ def main():
             while True:
                 time.sleep(config.update_interval)
         except KeyboardInterrupt:
-            LOG.info("Daemon process stopped.")
+            logger.info("Daemon process stopped.")
 
 if __name__ == '__main__':
     main()

@@ -1,11 +1,11 @@
 import gradio as gr
-
-from config import Config
-from github_client import GitHubClient
-from report_generator import ReportGenerator
-from llm import LLM
-from subscription_manager import SubscriptionManager
-from logger import LOG
+from datetime import datetime, timedelta
+from src.config import Config
+from src.github_client import GitHubClient
+from src.llm import LLM
+from src.report_generator import ReportGenerator
+from src.subscription_manager import SubscriptionManager
+from src.logger import LOG
 
 config = Config()
 github_client = GitHubClient(config.github_token)

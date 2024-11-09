@@ -1,6 +1,8 @@
 # src/scheduler.py
 
 import time
+from src.logger import LOG
+from src.config import Config
 
 class Scheduler:
     def __init__(self, github_client, notifier, report_generator, subscription_manager, interval=86400):

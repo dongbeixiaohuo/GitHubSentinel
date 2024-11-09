@@ -1,13 +1,13 @@
 import shlex
 
-from config import Config
-from github_client import GitHubClient
-from notifier import Notifier
-from report_generator import ReportGenerator
-from llm import LLM
-from subscription_manager import SubscriptionManager
-from command_handler import CommandHandler
-from logger import LOG
+from src.config import Config
+from src.github_client import GitHubClient
+from src.notifier import Notifier
+from src.llm import LLM
+from src.report_generator import ReportGenerator
+from src.subscription_manager import SubscriptionManager
+from src.command_handler import CommandHandler
+from src.logger import LOG
 
 def main():
     config = Config()

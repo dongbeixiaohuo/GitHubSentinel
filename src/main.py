@@ -1,19 +1,16 @@
 # src/main.py
 
-import threading
-import shlex
+import sys
+import argparse
+from loguru import logger
+import os
+from datetime import datetime
 
-from argparse import ArgumentError
-
-from config import Config
-from scheduler import Scheduler
-from github_client import GitHubClient
-from notifier import Notifier
-from report_generator import ReportGenerator
-from llm import LLM
-from subscription_manager import SubscriptionManager
-from command_handler import CommandHandler
-from logger import LOG
+from src.config import Config
+from src.github_client import GitHubClient
+from src.notifier import Notifier
+from src.report_generator import ReportGenerator
+from src.scheduler import Scheduler
 
 def run_scheduler(scheduler):
     scheduler.start()

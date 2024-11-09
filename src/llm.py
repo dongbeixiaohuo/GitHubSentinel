@@ -2,7 +2,8 @@
 
 import os
 from openai import OpenAI
-from logger import LOG
+from src.logger import LOG
+from src.config import Config
 
 class LLM:
     def __init__(self):

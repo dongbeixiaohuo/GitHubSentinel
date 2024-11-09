@@ -1,13 +1,15 @@
+import os
 import json
 
 class Config:
     def __init__(self):
         self.load_config()
-    
+
     def load_config(self):
-        with open('config.json', 'r') as f:
+        # 修改配置文件路径
+        config_path = os.path.join('config', 'config.json')
+        with open(config_path, 'r') as f:
             config = json.load(f)
-            self.github_token = config.get('github_token')
-            self.notification_settings = config.get('notification_settings')
-            self.subscriptions_file = config.get('subscriptions_file')
-            self.update_interval = config.get('update_interval', 24 * 60 * 60)  # Default to 24 hours
+            self.github_token = config.get('github_token', '')
+            self.openai_api_key = config.get('openai_api_key', '')
+            self.repositories = config.get('repositories', [])

@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  github-sentinel:
+    build: .
+    container_name: github-sentinel
+    volumes:
+      # 挂载配置文件
+      - ./config:/home/toy/GitHubSentinel/config
+      # 挂载数据目录
+      - ./daily_progress:/home/toy/GitHubSentinel/daily_progress
+    ports:
+      # 映射 Gradio 界面端口
+      - "7860:7860"
+    environment:
+      # 设置环境变量
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+    restart: unless-stopped

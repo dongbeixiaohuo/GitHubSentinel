@@ -1,4 +1,6 @@
 import json
+from src.logger import LOG
+from src.config import Config
 
 class SubscriptionManager:
     def __init__(self, subscriptions_file):

@@ -1,7 +1,8 @@
 import requests
 from datetime import datetime, date, timedelta
 import os
-from logger import LOG
+from src.logger import LOG
+from src.config import Config
 
 class GitHubClient:
     def __init__(self, token):

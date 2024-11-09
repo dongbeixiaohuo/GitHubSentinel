@@ -1,6 +1,7 @@
 import os
 from datetime import date, timedelta
-from logger import LOG
+from src.logger import LOG
+from src.config import Config
 
 class ReportGenerator:
     def __init__(self, llm):

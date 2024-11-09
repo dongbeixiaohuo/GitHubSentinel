@@ -1,3 +1,6 @@
+from src.logger import LOG
+from src.config import Config
+
 class Notifier:
     def __init__(self, settings):
         self.settings = settings
